@@ -28,5 +28,33 @@ defmodule Issues.CLI do
 
     def process({user, project, count}) do
         Issues.GithubIssues.fetch(user, project)
+            |> decode_response
+            |> convert_to_list_of_hashdicts
+            |> sort_into_ascending_order
+            |> Enum.take(count)
+    end
+
+    def sort_into_ascending_order(issues) do
+        issues
+            |> Enum.sort(&(&1["created_at"] <= &2["created_at"]))
+    end
+
+    def convert_to_list_of_hashdicts(list) do
+        list
+            |> Enum.map(&Enum.into(&1, HashDict.new))
+    end
+
+    defp decode_response({:ok, body}) do
+        body
+    end
+
+    defp decode_response({:not_found, _}) do
+        IO.puts "Github project not found"
+        System.halt(2)
+    end
+
+    defp decode_response({:error, reason}) do
+        IO.puts "Error fetching from Github #{reason}"
+        System.halt(2)
     end
 end

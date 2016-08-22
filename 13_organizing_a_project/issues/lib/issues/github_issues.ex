@@ -1,0 +1,25 @@
+defmodule Issues.GithubIssues do
+   @github_url Application.get_env(:issues, :github_url)
+
+   def fetch(user, project) do
+        issues_url(user, project)
+            |> HTTPoison.get
+            |> handle_response
+   end
+
+   defp issues_url(user, project) do
+       "#{@github_url}/repos/#{user}/#{project}/issues"
+   end
+
+   defp handle_response({:ok, %HTTPoison.Response{status_code: 200, body: body}}) do
+       {:ok, :jsx.decode(body)}
+   end
+
+   defp handle_response({:ok, %HTTPoison.Response{status_code: 404, body: body}}) do
+       {:not_found, :jsx.decode(body)}
+   end
+
+   defp handle_response({:error, %HTTPoison.Error{reason: reason}}) do
+       {:error, reason}
+   end
+end
